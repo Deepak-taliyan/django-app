@@ -48,6 +48,6 @@ jobs:
            docker rm django || true
            docker network create app-network -d bridge 2>/dev/null || true
            docker pull ${{secrets.dockerusername}}/django:latest
-           docker run -d -p 8000:8000  --restart unless-stopped --network app-network --name django django:latest
+           docker run -d -p 8000:8000  --restart unless-stopped --network app-network --name django ${{secrets.dockerusername}}/django:latest
            docker image prune -f 
 
