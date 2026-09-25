@@ -1,0 +1,49 @@
+name: noname
+on:
+  push:
+    branches:
+      - main
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: checkout 
+        uses: Qonfused/checkout@4.2.2
+
+      - name: setup env
+        uses: actions/setup-python@v7.0.0 
+        with:
+          version: 3.14
+          cache: pip
+
+      - name: image tag 
+        run: echo "IMAGE_TAG=${GITHUB_SHA::7}" >> $GITHUB_ENV
+
+      - name: login in docker
+        uses: docker/login-action@v4.6.0
+        with:
+          username: ${{secrets.dockerusername}}
+          password: ${{secrets.dockerpassword}}
+
+      - name: build docker images
+        run: docker build -t ${{secrets.dockerusername}}/django:$IMAGE_TAG
+        run: docker build -t ${{secrets.dockerusername}}/django:latest
+
+      - name: push to hub
+        run: docker push ${{secrets.dockerusername}}/django:$IMAGE_TAG
+        run: docker push ${{secrets.dockerusername}}/django:latest
+
+      - name: ssh to ec2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{secrets.ec2host}}
+          username: ubuntu
+          key: ${{secrets.sshkey}}
+          script: |
+           docker stop django || true
+           docker rm django || true
+           docker network create app-network -d bridge 2>/dev/null || true
+           docker run -d -p 8000:8000  --restart unless-stopped --network app-network --name django django:latest
+           docker image prune -f 
+
