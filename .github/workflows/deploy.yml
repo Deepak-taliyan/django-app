@@ -28,8 +28,8 @@ jobs:
 
       - name: build docker images
         run: |
-          docker build -t ${{secrets.dockerusername}}/django:$IMAGE_TAG .
-          docker build -t ${{secrets.dockerusername}}/django:latest .
+          docker build -t --no-cache  ${{secrets.dockerusername}}/django:$IMAGE_TAG .
+          docker build -t --no-cache ${{secrets.dockerusername}}/django:latest .
 
       - name: push to hub
         run: |
